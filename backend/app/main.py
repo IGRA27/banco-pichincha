@@ -4,7 +4,11 @@ from __future__ import annotations
 import logging
 import os
 
-from fastapi import FastAPI
+from pathlib import Path
+
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.routes import public, router
@@ -25,7 +29,27 @@ def create_app() -> FastAPI:
     app.add_middleware(SecurityMiddleware)
     app.include_router(public)
     app.include_router(router)
+    _mount_frontend(app)
     return app
+
+
+def _mount_frontend(app: FastAPI) -> None:
+    """Sirve el SPA compilado (un solo servicio Cloud Run: UI + API, mismo origen)."""
+    static = os.getenv("STATIC_DIR")
+    if not static or not Path(static).is_dir():
+        return
+    root = Path(static).resolve()
+    app.mount("/assets", StaticFiles(directory=root / "assets"), name="assets")
+
+    @app.get("/{path:path}", include_in_schema=False)
+    def spa(path: str):
+        if path.startswith("api/"):
+            raise HTTPException(404, "No encontrado")
+        candidate = (root / path).resolve()
+        # Evita path traversal: solo archivos dentro de STATIC_DIR
+        if path and candidate.is_file() and root in candidate.parents:
+            return FileResponse(candidate)
+        return FileResponse(root / "index.html")
 
 
 app = create_app()
