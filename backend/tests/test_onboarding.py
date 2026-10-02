@@ -3,6 +3,8 @@ import os
 os.environ["DATABASE_PATH"] = ":memory:"
 os.environ["LLM_ENABLED"] = "false"
 os.environ["TOOL_BACKOFF_SECONDS"] = "0"
+os.environ["AUTH_USERNAME"] = "tester"
+os.environ["AUTH_TOKEN_SECRET"] = "x" * 40
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -10,7 +12,12 @@ from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 from app.tools.gateway import ToolGateway, ToolPermissionError  # noqa: E402
 
+from app.core.auth import hash_password  # noqa: E402
+
+os.environ["AUTH_PASSWORD_HASH"] = hash_password("S3gura-Clave")
 client = TestClient(app)
+_tok = client.post("/api/v1/auth/login", json={"username": "tester", "password": "S3gura-Clave"}).json()
+client.headers["Authorization"] = f"Bearer {_tok['access_token']}"
 
 
 def start(doc, name="Juan Perez", product="cuenta_ahorros"):
@@ -175,3 +182,19 @@ def test_hitl_high_severity_approval_requires_justification():
 def test_security_headers_present():
     r = client.get("/api/v1/health")
     assert r.headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_endpoints_require_auth():
+    anon = TestClient(app)
+    assert anon.post("/api/v1/onboarding/start", json={}).status_code == 401
+    assert anon.get("/api/v1/agents").status_code == 401
+    bad = TestClient(app, headers={"Authorization": "Bearer abc.def"})
+    assert bad.get("/api/v1/agents").status_code == 401
+
+
+def test_login_wrong_password_generic_error_and_lockout():
+    anon = TestClient(app)
+    for _ in range(5):
+        r = anon.post("/api/v1/auth/login", json={"username": "tester", "password": "mal"})
+        assert r.status_code == 401 and r.json()["detail"] == "Usuario o contraseña incorrectos"
+    assert anon.post("/api/v1/auth/login", json={"username": "tester", "password": "mal"}).status_code == 429
