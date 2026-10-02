@@ -1,0 +1,12 @@
+# Nunca subir secretos ni artefactos locales a Cloud Build
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+.pytest_cache/
+*.db
+tests/
+scripts/
+.gcloudignore
+.git
