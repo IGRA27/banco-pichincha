@@ -54,14 +54,16 @@ flowchart TB
         P2{{"risk_agent → check_risk_lists"}}
         P3{{"documentation_agent → prepare_documentation"}}
         P4{{"response_agent → ∅ (sin tools)"}}
+        P5{{"advisor_agent → ∅ (sin tools)"}}
     end
 
     IA --> P1 --> T1[verify_identity]
     RA --> P2 --> T2[check_risk_lists]
     DA --> P3 --> T3[prepare_documentation]
     RSA --> P4
-    RSA -. "texto, nunca decisión" .-> LLM[OpenAI / plantilla]
+    RSA -. "texto, nunca decisión" .-> LLM["OpenAI gpt-5-mini<br/>+ guardrails / plantilla"]
     ORQ --> ADV["advisor_agent<br/>(recomienda remediación)"]
+    ADV --> P5
     ADV -. "acción de catálogo cerrado" .-> LLM
     ADV --> HITL{{"Revisor humano<br/>decide siempre"}}
 
