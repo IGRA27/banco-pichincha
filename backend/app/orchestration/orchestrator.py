@@ -21,7 +21,7 @@ from app.agents.documentation import DocumentationAgent
 from app.agents.identity import IdentityAgent
 from app.agents.response import ResponseAgent
 from app.agents.risk import RiskAgent
-from app.domain.models import (Decision, OnboardingRequest, OnboardingSession, RequiredDocument,
+from app.domain.models import (Decision, Escalation, OnboardingRequest, OnboardingSession, RequiredDocument,
                         ResolveRequest, SessionStatus, StepResult, StepStatus)
 from app.infrastructure.repository import SessionRepository
 from app.llm.client import LLMClient
@@ -75,6 +75,14 @@ class Orchestrator:
                                   output={"decision": outcome.decision.value, "reasons": outcome.reasons},
                                   notes="; ".join(outcome.reasons)))
         s.log("system", f"Decisión de política: {outcome.decision.value}")
+        if outcome.decision == Decision.REVISION_MANUAL and not s.escalations:
+            # Revisión por política (p. ej. riesgo fuera del apetito del producto):
+            # también debe llegar al humano con una solución propuesta.
+            s.escalations.append(Escalation(
+                reason="; ".join(outcome.reasons), source_agent="orchestrator", severity="medium",
+                proposed_solution="Ofrecer un producto acorde al perfil (p. ej. cuenta de ahorros) "
+                                  "o solicitar documentación adicional para reevaluar.",
+            ))
 
     def _finish(self, s: OnboardingSession) -> OnboardingSession:
         if s.decision == Decision.APTO:

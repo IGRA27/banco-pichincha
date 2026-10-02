@@ -24,16 +24,19 @@ REMEDIATIONS: dict[str, str] = {
     "RETRY_LATER": "Reintentar la verificación automática más tarde",
     "COMPLIANCE_REVIEW": "Derivar al Oficial de Cumplimiento",
     "REQUEST_ADDITIONAL_DOCS": "Solicitar documentación adicional al prospecto",
+    "OFFER_ALTERNATIVE_PRODUCT": "Ofrecer un producto alternativo acorde al perfil",
 }
 
 # Acciones permitidas por agente que originó el escalamiento
 ALLOWED: dict[str, list[str]] = {
     "identity_agent": ["BIOMETRIC_LIVENESS", "VIDEO_CALL", "IN_BRANCH_VERIFICATION", "RETRY_LATER"],
     "risk_agent": ["COMPLIANCE_REVIEW", "REQUEST_ADDITIONAL_DOCS"],
+    "orchestrator": ["OFFER_ALTERNATIVE_PRODUCT", "REQUEST_ADDITIONAL_DOCS", "COMPLIANCE_REVIEW"],
 }
 
 # Fallback determinista
-DEFAULT_ACTION: dict[str, str] = {"identity_agent": "BIOMETRIC_LIVENESS", "risk_agent": "COMPLIANCE_REVIEW"}
+DEFAULT_ACTION: dict[str, str] = {"identity_agent": "BIOMETRIC_LIVENESS", "risk_agent": "COMPLIANCE_REVIEW",
+                                  "orchestrator": "OFFER_ALTERNATIVE_PRODUCT"}
 
 SYSTEM_PROMPT = """Eres un asesor de operaciones de onboarding bancario. Recibes un caso escalado
 y debes recomendar UNA acción de remediación para el revisor humano.
