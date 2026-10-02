@@ -15,6 +15,7 @@ from __future__ import annotations
 import logging
 
 from app.domain import policies
+from app.agents.advisor import EscalationAdvisorAgent
 from app.agents.base import AgentResult, SubAgent
 from app.agents.documentation import DocumentationAgent
 from app.agents.identity import IdentityAgent
@@ -23,6 +24,7 @@ from app.agents.risk import RiskAgent
 from app.domain.models import (Decision, OnboardingRequest, OnboardingSession, RequiredDocument,
                         ResolveRequest, SessionStatus, StepResult, StepStatus)
 from app.infrastructure.repository import SessionRepository
+from app.llm.client import LLMClient
 from app.tools.gateway import ToolGateway
 
 log = logging.getLogger("orchestrator")
@@ -36,13 +38,14 @@ _STATUS_BY_DECISION = {
 
 class Orchestrator:
     def __init__(self, repo: SessionRepository, gateway: ToolGateway | None = None,
-                 response_agent: ResponseAgent | None = None):
+                 llm: LLMClient | None = None):
         self.repo = repo
         gw = gateway or ToolGateway()
         self.identity = IdentityAgent(gw)
         self.risk = RiskAgent(gw)
         self.documentation = DocumentationAgent(gw)
-        self.response = response_agent or ResponseAgent(gw)
+        self.advisor = EscalationAdvisorAgent(gw, llm)
+        self.response = ResponseAgent(gw, llm)
 
     # ---------- helpers ----------
     def _apply(self, s: OnboardingSession, agent: SubAgent, r: AgentResult) -> None:
@@ -101,6 +104,10 @@ class Orchestrator:
             self._run(s, self.risk)
 
         self._decide(s)
+        if s.decision == Decision.REVISION_MANUAL and s.escalations:
+            # Human-in-the-loop: el asesor solo recomienda; la sesión queda
+            # ESCALATED hasta que un revisor humano resuelva.
+            self._run(s, self.advisor)
         return self._finish(s)
 
     def resolve(self, session_id: str, req: ResolveRequest) -> OnboardingSession:
@@ -109,6 +116,10 @@ class Orchestrator:
             raise KeyError(session_id)
         if s.status != SessionStatus.ESCALATED:
             raise ValueError(f"La sesión está en estado {s.status.value}; solo se resuelven ESCALATED")
+        high = any(e.severity == "high" for e in s.escalations)
+        if high and req.decision == "approve" and len(req.notes) < 10:
+            # Guardrail HITL: aprobar un caso de severidad alta exige justificación
+            raise ValueError("Aprobar un caso de severidad alta requiere una justificación (mín. 10 caracteres)")
         s.log("user", f"Revisión humana por {req.reviewer}: {req.decision}. {req.notes}".strip(),
               agent="human_reviewer")
         s.context["escalated"] = False

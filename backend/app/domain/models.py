@@ -50,6 +50,12 @@ class OnboardingRequest(BaseModel):
         v = " ".join(v.split())
         if not all(c.isalpha() or c in " '-." for c in v):
             raise ValueError("El nombre solo puede contener letras y espacios")
+        if len(v.split()) > 6:
+            raise ValueError("El nombre tiene demasiadas palabras")
+        # Guardrail de entrada: texto con forma de instrucción no es un nombre
+        from app.llm.guardrails import looks_like_injection
+        if looks_like_injection(v):
+            raise ValueError("El nombre contiene texto no permitido")
         return v
 
     @field_validator("document_id")
@@ -65,6 +71,11 @@ class ResolveRequest(BaseModel):
     decision: Literal["approve", "reject"]
     reviewer: str = Field(min_length=2, max_length=80)
     notes: str = Field(default="", max_length=500)
+
+    @field_validator("reviewer", "notes")
+    @classmethod
+    def _clean(cls, v: str) -> str:
+        return "".join(c for c in v if c.isprintable()).strip()
 
 
 class StepResult(BaseModel):
@@ -83,6 +94,8 @@ class Escalation(BaseModel):
     source_agent: str
     proposed_solution: str
     severity: Literal["low", "medium", "high"] = "medium"
+    # Recomendación del advisor_agent (LLM o regla); la decide un humano
+    ai_recommendation: Optional[dict[str, Any]] = None
 
 
 class RequiredDocument(BaseModel):

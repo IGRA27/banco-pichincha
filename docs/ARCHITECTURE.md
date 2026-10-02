@@ -16,12 +16,12 @@ flowchart LR
             DB[("SQLite<br/>estado de sesiones")]
             CR --- DB
         end
-        SM["Secret Manager<br/>ANTHROPIC_API_KEY"] -.-> CR
+        SM["Secret Manager<br/>OPENAI_API_KEY"] -.-> CR
         AR["Artifact Registry<br/>imagen Docker"] -.-> CR
         CL["Cloud Logging<br/>auditoría de tools"] <-.- CR
     end
 
-    CR -.->|"opcional: redacción del mensaje"| LLM["Claude API"]
+    CR -.->|"redacción + recomendación (guardrails)"| LLM["OpenAI API"]
     CR -->|mock| T1["verify_identity<br/>(Registro Civil)"]
     CR -->|mock| T2["check_risk_lists<br/>(OFAC / ONU / PEP)"]
     CR -->|mock| T3["prepare_documentation<br/>(Gestor documental)"]
@@ -60,7 +60,10 @@ flowchart TB
     RA --> P2 --> T2[check_risk_lists]
     DA --> P3 --> T3[prepare_documentation]
     RSA --> P4
-    RSA -. "texto, nunca decisión" .-> LLM[Claude / plantilla]
+    RSA -. "texto, nunca decisión" .-> LLM[OpenAI / plantilla]
+    ORQ --> ADV["advisor_agent<br/>(recomienda remediación)"]
+    ADV -. "acción de catálogo cerrado" .-> LLM
+    ADV --> HITL{{"Revisor humano<br/>decide siempre"}}
 
     ORQ <--> REPO[("SessionRepository<br/>SQLite")]
 ```
@@ -86,7 +89,8 @@ flowchart TD
     NO --> M
     REV --> M
     M --> F([Respuesta al cliente])
-    REV -. "POST /resolve" .-> H{Revisor humano}
+    REV --> ADV["advisor_agent · LLM<br/>recomienda acción de catálogo cerrado"]
+    ADV -. "POST /resolve" .-> H{"Revisor humano<br/>decide siempre"}
     H -->|approve| D
     H -->|reject| M
 ```
@@ -127,7 +131,7 @@ sequenceDiagram
     O->>O: policies.evaluate() → APTO
     O->>G: documentation_agent · prepare_documentation
     G-->>O: documentos requeridos
-    O->>O: response_agent (Claude o plantilla)
+    O->>O: response_agent (OpenAI + guardrails o plantilla)
     O->>DB: save(APPROVED)
     API-->>C: sesión (steps, decision, documentos, mensaje)
 ```
@@ -137,7 +141,9 @@ sequenceDiagram
 | Decisión | Motivo |
 |---|---|
 | Supervisor **determinista** (no LLM-router) | En banca la ruta y la decisión deben ser auditables y reproducibles. |
-| LLM solo en `response_agent`, sin tools | Minimiza superficie de riesgo: el modelo redacta, no decide ni consulta sistemas. |
+| LLM sin tools y sin poder de decisión | `response_agent` redacta y `advisor_agent` recomienda de un catálogo cerrado; la decisión es del motor de políticas o de un humano. |
+| Guardrails en capas | Entrada (validación, anti-injection, minimización de PII) → prompt (datos delimitados) → salida (JSON Schema estricto, filtros, coherencia) → fallback determinista. |
+| Human-in-the-loop | Todo caso ambiguo queda ESCALATED; aprobar severidad alta exige justificación. |
 | `ToolGateway` con allowlist por agente | Mínimo privilegio; un agente no puede invocar herramientas ajenas (test incluido). |
 | Checkpoint del estado tras cada paso | Recuperación ante fallas y trazabilidad completa del caso. |
 | Escalamiento con **solución propuesta** | Requisito 3: toda falla/ambigüedad sale con acción concreta para el revisor. |

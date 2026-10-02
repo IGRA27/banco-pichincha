@@ -29,6 +29,7 @@ PERMISSIONS: dict[str, frozenset[str]] = {
     "risk_agent": frozenset({"check_risk_lists"}),
     "documentation_agent": frozenset({"prepare_documentation"}),
     "response_agent": frozenset(),  # solo redacta, no consulta sistemas
+    "advisor_agent": frozenset(),   # solo recomienda, no consulta sistemas
 }
 
 

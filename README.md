@@ -6,7 +6,7 @@ políticas del banco y genera la respuesta al cliente. El orquestador controla q
 puede usar cada agente, maneja el estado entre pasos y escala ante incertidumbre con una
 solución propuesta.
 
-**Stack:** FastAPI (Python 3.12) en Cloud Run · React + Vite en Firebase Hosting · SQLite para el estado · Claude (opcional) para redactar el mensaje al cliente.
+**Stack:** FastAPI (Python 3.12) en Cloud Run · React + Vite en Firebase Hosting · SQLite para el estado · OpenAI (opcional) con guardrails y human-in-the-loop.
 
 📐 Diagramas (Mermaid): [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -17,7 +17,9 @@ flowchart LR
     O --> IA[identity_agent] --> T1[(verify_identity)]
     O --> RA[risk_agent] --> T2[(check_risk_lists)]
     O --> DA[documentation_agent] --> T3[(prepare_documentation)]
-    O --> RS[response_agent] -.-> LLM[Claude / plantilla]
+    O --> RS[response_agent] -.-> LLM[OpenAI + guardrails]
+    O --> AD[advisor_agent] -.-> LLM
+    AD --> H{{Revisor humano}}
     O <--> DB[(SQLite · sesiones)]
 ```
 
@@ -107,8 +109,30 @@ uvicorn app.main:app --reload --port 8000
 cd frontend && npm install && npm run dev          # http://localhost:5173 (proxy /api → :8000)
 ```
 
-Opcional: `export ANTHROPIC_API_KEY=...` para que `response_agent` redacte con Claude
-(`claude-opus-5`, effort bajo). Sin la variable usa plantillas, y la decisión nunca depende del LLM.
+### Activar el LLM (OpenAI)
+
+1. Pon tu key en **`backend/.env`** (ya existe; está en `.gitignore` y en `.dockerignore`):
+   ```
+   OPENAI_API_KEY=sk-...
+   OPENAI_MODEL=gpt-4o-mini
+   ```
+2. Reinicia el backend. En el log verás `LLM habilitado: OpenAI model=...`.
+
+Sin key, todo funciona con plantillas y reglas: el LLM nunca es requisito para decidir.
+
+## Seguridad y guardrails
+
+| Capa | Control |
+|---|---|
+| Entrada | Pydantic estricto (nombre solo letras, máx. 6 palabras; cédula numérica), detección de prompt injection → 422, body máx. 8 KB, rate limit por IP |
+| Minimización de PII | Al LLM solo llega el primer nombre, el producto y la decisión. Nunca la cédula, listas ni puntajes |
+| Prompt | Instrucciones de sistema fijas; datos del usuario delimitados (`<datos>`) y declarados como no-instrucciones |
+| Capacidades | El LLM no tiene tools (`ToolGateway` le asigna ∅) ni puede cambiar la decisión |
+| Salida | JSON Schema estricto (`strict: true`, `enum` de acciones), filtro de datos sensibles/enlaces, chequeo de coherencia con la decisión |
+| Fail-safe | Timeout, tope de tokens y cualquier error o bloqueo → plantilla o regla determinista |
+| Human-in-the-loop | `advisor_agent` solo recomienda; casos ambiguos quedan `ESCALATED`; aprobar severidad alta exige justificación escrita |
+| Secretos | `.env` local fuera de git y de la imagen; en GCP la key va por Secret Manager. Los logs nunca incluyen key ni payloads |
+| HTTP | CORS restringido, cabeceras `nosniff`, `DENY`, `no-store`, HSTS; contenedor con usuario no root |
 
 ## Desplegar en GCP
 
