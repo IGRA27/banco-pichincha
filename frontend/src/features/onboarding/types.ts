@@ -26,6 +26,15 @@ export interface Escalation {
   source_agent: string;
   proposed_solution: string;
   severity: Severity | string;
+  ai_recommendation?: AiRecommendation | null;
+}
+
+export interface AiRecommendation {
+  action: string;
+  label: string;
+  rationale: string;
+  confidence: number;
+  source: "llm" | "rules" | string;
 }
 
 export interface RequiredDocument {
