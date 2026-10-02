@@ -37,7 +37,7 @@ class Settings:
     @property
     def openai_api_key(self) -> str | None:
         # Se lee bajo demanda y nunca se serializa ni se loguea
-        return os.getenv("OPENAI_API_KEY") or None
+        return (os.getenv("OPENAI_API_KEY") or "").strip() or None
 
 
 settings = Settings()

@@ -54,7 +54,7 @@ def verify_password(password: str, stored: str) -> bool:
 
 
 def _secret() -> bytes:
-    s = os.getenv("AUTH_TOKEN_SECRET", "")
+    s = os.getenv("AUTH_TOKEN_SECRET", "").strip()
     if len(s) < 32:
         raise RuntimeError("AUTH_TOKEN_SECRET no configurado (mín. 32 caracteres)")
     return s.encode()
@@ -99,8 +99,8 @@ def authenticate(username: str, password: str, ip: str) -> str:
         raise HTTPException(status.HTTP_429_TOO_MANY_REQUESTS,
                             "Demasiados intentos. Espera unos minutos.",
                             headers={"Retry-After": str(LOGIN_WINDOW_SECONDS)})
-    expected_user = os.getenv("AUTH_USERNAME", "")
-    stored = os.getenv("AUTH_PASSWORD_HASH", "")
+    expected_user = os.getenv("AUTH_USERNAME", "").strip()
+    stored = os.getenv("AUTH_PASSWORD_HASH", "").strip()
     user_ok = bool(expected_user) and hmac.compare_digest(username.encode(), expected_user.encode())
     pass_ok = verify_password(password, stored if (user_ok and stored) else _DUMMY_HASH)
     if not (user_ok and pass_ok):
