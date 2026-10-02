@@ -1,4 +1,4 @@
-# Onboarding Agéntico: Prueba técnica para Banco Pichincha
+# Onboarding Agéntico: Banco Pichincha
 
 Un **agente orquestador** coordina cuatro sub-agentes especializados para el onboarding digital de
 un prospecto:
