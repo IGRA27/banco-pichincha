@@ -24,7 +24,7 @@ _INJECTION = re.compile(
 )
 _FORBIDDEN_OUT = re.compile(
     r"\bOFAC\b|\bPEP\b|\bUAFE\b|lista[s]? (de )?(riesgo|restrictiva|negra)|sanci[oó]n|"
-    r"confianza|score|puntaje|\b\d{10}\b|https?://|www\.",
+    r"confianza|score|puntaje|\b\d{10}\b|https?://|www\.|REVISION_MANUAL|NO_APTO|\bAPTO\b",
     re.IGNORECASE,
 )
 _CONTRADICTIONS: dict[Decision, re.Pattern] = {

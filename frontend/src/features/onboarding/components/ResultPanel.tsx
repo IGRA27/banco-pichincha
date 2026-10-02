@@ -118,7 +118,7 @@ export function ResultPanel(props: Props) {
       </h2>
       <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col gap-0">
         <div className="flex items-center justify-between gap-2 px-3 pt-3 sm:px-4">
-          <TabsList className="max-w-full overflow-x-auto">
+          <TabsList className="max-w-full overflow-x-auto overflow-y-hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <TabsTrigger value="resumen">Resumen</TabsTrigger>
             <TabsTrigger value="traza" disabled={!hasSession}>
               Traza

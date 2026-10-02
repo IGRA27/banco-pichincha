@@ -47,6 +47,9 @@ export function LoginPage() {
               <span className="size-3 rounded-full bg-accent" />
             </span>
             <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Prueba técnica · Banco Pichincha
+              </p>
               <h1 className="text-lg font-semibold tracking-tight">Onboarding Agéntico</h1>
               <p className="text-sm text-muted-foreground">Ingresa para continuar</p>
             </div>

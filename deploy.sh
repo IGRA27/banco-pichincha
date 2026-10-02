@@ -28,7 +28,7 @@ gcloud projects add-iam-policy-binding "$PROJECT_ID" --quiet   --member="service
 
 gcloud run deploy "$SERVICE" --source backend --region "$REGION" \
   --allow-unauthenticated --max-instances 1 --memory 512Mi \
-  --set-env-vars "DATABASE_PATH=/tmp/onboarding.db,OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini},CORS_ORIGINS=https://${PROJECT_ID}.web.app,AUTH_USERNAME=evaluador,ENABLE_DOCS=false" $SECRET_FLAG
+  --set-env-vars "DATABASE_PATH=/tmp/onboarding.db,OPENAI_MODEL=${OPENAI_MODEL:-gpt-5-mini},OPENAI_REASONING_EFFORT=low,LLM_TIMEOUT_SECONDS=30,CORS_ORIGINS=https://${PROJECT_ID}.web.app,AUTH_USERNAME=evaluador,ENABLE_DOCS=false" $SECRET_FLAG
 
 (cd frontend && npm ci && npm run build)
 firebase deploy --only hosting --project "$PROJECT_ID"

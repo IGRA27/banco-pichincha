@@ -25,7 +25,9 @@ class Settings:
     llm_enabled: bool = os.getenv("LLM_ENABLED", "true").lower() != "false"
     openai_model: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     llm_timeout_seconds: float = float(os.getenv("LLM_TIMEOUT_SECONDS", "15"))
-    llm_max_output_tokens: int = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "400"))
+    llm_max_output_tokens: int = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "2000"))
+    # Solo para modelos de razonamiento (gpt-5*, o-series): minimal|low|medium|high
+    openai_reasoning_effort: str = os.getenv("OPENAI_REASONING_EFFORT", "")
     # Seguridad HTTP
     cors_origins: list[str] = field(
         default_factory=lambda: os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")

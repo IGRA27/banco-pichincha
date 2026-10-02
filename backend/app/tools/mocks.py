@@ -38,6 +38,19 @@ def _stable_ratio(seed: str) -> float:
     return int(hashlib.sha256(seed.encode()).hexdigest()[:8], 16) / 0xFFFFFFFF
 
 
+def _valid_ec_structure(doc: str) -> bool:
+    """Estructura de cédula ecuatoriana: 10 dígitos, provincia 01-24 o 30, 3er dígito < 6."""
+    return len(doc) == 10 and doc.isdigit() and (1 <= int(doc[:2]) <= 24 or doc[:2] == "30") and int(doc[2]) < 6
+
+
+# Lista de vigilancia ficticia (para probar coincidencias por nombre)
+WATCHLIST = {"escobar": ("OFAC-SDN", 0.91), "guzman": ("ONU-1267", 0.88), "testigo": ("UAFE-LOCAL", 0.75)}
+
+
+def _bucket(document_id: str) -> float:
+    return _stable_ratio("bucket:" + document_id)
+
+
 def verify_identity(document_id: str) -> dict[str, Any]:
     """Tool 1 -> {"verified": bool, "confidence": 0.0-1.0}"""
     sc = SCENARIOS.get(document_id, {})
@@ -51,7 +64,12 @@ def verify_identity(document_id: str) -> dict[str, Any]:
             raise ToolTimeoutError("Registro Civil: 503 Service Unavailable")
     if "identity" in sc:
         return dict(sc["identity"])
-    # Fuera de escenarios: confianza alta y estable por documento
+    # Casos libres: deterministas por documento para que QA vea variedad
+    if not sc and not _valid_ec_structure(document_id):
+        return {"verified": False, "confidence": 0.99}
+    b = _bucket(document_id)
+    if b < 0.15:  # ~15% identidad ambigua
+        return {"verified": True, "confidence": round(0.55 + 0.2 * _stable_ratio(document_id), 2)}
     return {"verified": True, "confidence": round(0.85 + 0.15 * _stable_ratio(document_id), 2)}
 
 
@@ -60,6 +78,16 @@ def check_risk_lists(name: str, document_id: str) -> dict[str, Any]:
     sc = SCENARIOS.get(document_id, {})
     if "risk" in sc:
         return {"risk_level": sc["risk"]["risk_level"], "matches": list(sc["risk"]["matches"])}
+    for token in name.lower().split():
+        if token in WATCHLIST:
+            lst, score = WATCHLIST[token]
+            level = "high" if score >= 0.85 else "medium"
+            return {"risk_level": level, "matches": [{"list": lst, "score": score, "entry": name.upper()}]}
+    b = _bucket(document_id)
+    if 0.15 <= b < 0.25:  # ~10% riesgo medio
+        return {"risk_level": "medium", "matches": [{"list": "PEP-EC", "score": 0.7, "entry": name.upper()}]}
+    if 0.25 <= b < 0.32:  # ~7% riesgo alto
+        return {"risk_level": "high", "matches": [{"list": "OFAC-SDN", "score": 0.9, "entry": name.upper()}]}
     return {"risk_level": "low", "matches": []}
 
 

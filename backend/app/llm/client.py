@@ -32,8 +32,11 @@ class OpenAIClient:
 
     def structured(self, system: str, user: str, schema_name: str,
                    schema: dict[str, Any]) -> dict[str, Any] | None:
+        extra = ({"reasoning_effort": settings.openai_reasoning_effort}
+                 if settings.openai_reasoning_effort else {})
         try:
             resp = self._client.chat.completions.create(
+                **extra,
                 model=self._model,
                 max_completion_tokens=settings.llm_max_output_tokens,
                 messages=[{"role": "system", "content": system},

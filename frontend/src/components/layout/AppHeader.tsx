@@ -10,7 +10,12 @@ export function AppHeader() {
         <span className="grid size-7 shrink-0 place-items-center rounded-md bg-white/10" aria-hidden="true">
           <span className="size-2.5 rounded-full bg-accent" />
         </span>
-        <h1 className="text-base font-semibold tracking-tight whitespace-nowrap">Onboarding Agéntico</h1>
+        <div className="flex min-w-0 flex-col leading-tight">
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary-foreground/70">
+            Banco Pichincha
+          </span>
+          <h1 className="text-base font-semibold tracking-tight whitespace-nowrap">Onboarding Agéntico</h1>
+        </div>
         <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold text-accent-foreground">Demo</span>
         <p className="ml-2 hidden min-w-0 truncate text-sm text-primary-foreground/75 md:block">
           Agentes de IA verifican identidad, riesgo y documentos para abrir una cuenta.
