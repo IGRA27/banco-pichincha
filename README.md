@@ -135,7 +135,28 @@ frontend/src/
 
 ---
 
-## 4. Ejecutar localmente
+## 4. Probarlo en tu máquina con Docker (recomendado)
+
+Solo necesitas Docker Desktop. Todo corre en un contenedor: UI + API.
+
+```bash
+git clone https://github.com/IGRA27/banco-pichincha.git
+cd banco-pichincha
+docker compose run --rm init      # crea backend/.env y te muestra usuario y contraseña (una sola vez)
+docker compose up --build         # abre http://localhost:8080
+```
+
+- **Sin key de OpenAI:** funciona completo con reglas y plantillas. Si quieres probar el LLM, agrega
+  tu propia `OPENAI_API_KEY` en `backend/.env` y reinicia con `docker compose up`.
+- **Seguridad del contenedor:**
+  - corre como usuario sin root;
+  - el sistema de archivos es de solo lectura (`read_only`);
+  - no tiene capacidades de Linux extra (`cap_drop: ALL`) y aplica `no-new-privileges`;
+  - el puerto solo es accesible desde tu máquina (`127.0.0.1`);
+  - los secretos se inyectan al arrancar y nunca quedan dentro de la imagen.
+- **Prueba automática completa:** `E2E_BASE_URL=http://localhost:8080 E2E_USER=evaluador E2E_PASSWORD=<la tuya> python backend/scripts/e2e_check.py`
+
+## 5. Ejecutar localmente sin Docker
 
 ```bash
 # Backend
@@ -155,20 +176,20 @@ cd frontend && npm install && npm run dev             # http://localhost:5173
 - `AUTH_TOKEN_SECRET`: genéralo con `python -c "import secrets;print(secrets.token_urlsafe(48))"`.
 - `OPENAI_API_KEY`: opcional. Sin key, todo funciona con reglas y plantillas.
 
-## 5. Desplegar en GCP
+## 6. Desplegar en GCP
 
-```bash
-gcloud auth login && firebase login
-export PROJECT_ID=<tu-proyecto>
-# crear una vez los secretos auth-password-hash, auth-token-secret y openai-api-key (ver deploy.sh)
-./deploy.sh
-```
+**Desde la consola web (sin comandos):** Cloud Run → Implementar contenedor → "Desde un repositorio"
+→ este repo, `Dockerfile` en la raíz. Agrega las variables `AUTH_USERNAME`, `OPENAI_MODEL` y
+`ENABLE_DOCS=false`, y referencia como secretos de Secret Manager `AUTH_PASSWORD_HASH`,
+`AUTH_TOKEN_SECRET` y `OPENAI_API_KEY`. Escalamiento máximo: 1.
+
+**Por terminal:** `PROJECT_ID=<tu-proyecto> ./deploy.sh` (Cloud Run + Firebase Hosting).
 
 Cloud Run aloja la API y Firebase Hosting el frontend, que reenvía `/api/**` a Cloud Run (mismo
 dominio, sin CORS). El proyecto necesita facturación activa, aunque el uso de la demo entra en la
 capa gratuita.
 
-## 6. Próximos pasos hacia producción
+## 7. Próximos pasos hacia producción
 
 - Cloud SQL (PostgreSQL) en lugar de SQLite: es cambiar una sola clase, `SessionRepository`.
 - Integraciones reales (Registro Civil, OFAC/ONU/UAFE, gestor documental) detrás del mismo gateway.
