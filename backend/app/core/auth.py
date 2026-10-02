@@ -38,12 +38,13 @@ def _b64d(s: str) -> bytes:
 def hash_password(password: str) -> str:
     salt = secrets.token_bytes(16)
     h = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, ITERATIONS)
-    return f"pbkdf2_sha256${ITERATIONS}${_b64e(salt)}${_b64e(h)}"
+    # Separador ":" (no "$") para que Docker Compose no lo interprete como variable
+    return f"pbkdf2_sha256:{ITERATIONS}:{_b64e(salt)}:{_b64e(h)}"
 
 
 def verify_password(password: str, stored: str) -> bool:
     try:
-        algo, it, salt, expected = stored.split("$")
+        algo, it, salt, expected = stored.replace("$", ":").split(":")
         if algo != "pbkdf2_sha256":
             return False
         h = hashlib.pbkdf2_hmac("sha256", password.encode(), _b64d(salt), int(it))
