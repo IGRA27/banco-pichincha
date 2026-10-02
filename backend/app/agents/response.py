@@ -10,8 +10,8 @@ import logging
 import os
 
 from app.agents.base import AgentResult, SubAgent
-from app.config import settings
-from app.models import Decision, OnboardingSession, StepStatus
+from app.core.config import settings
+from app.domain.models import Decision, OnboardingSession, StepStatus
 
 log = logging.getLogger("response_agent")
 

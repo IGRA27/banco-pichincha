@@ -1,5 +1,5 @@
 from app.agents.base import AgentResult, SubAgent
-from app.models import Escalation, OnboardingSession, StepStatus
+from app.domain.models import Escalation, OnboardingSession, StepStatus
 from app.tools.gateway import ToolUnavailableError
 
 

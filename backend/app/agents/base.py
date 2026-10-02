@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
-from app.models import Escalation, OnboardingSession, StepStatus
+from app.domain.models import Escalation, OnboardingSession, StepStatus
 from app.tools.gateway import ToolGateway
 
 

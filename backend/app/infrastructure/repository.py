@@ -10,7 +10,7 @@ import sqlite3
 import threading
 from typing import Optional, Protocol
 
-from app.models import OnboardingSession
+from app.domain.models import OnboardingSession
 
 
 class SessionRepository(Protocol):

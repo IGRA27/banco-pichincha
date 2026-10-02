@@ -12,7 +12,7 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from app.config import settings
+from app.core.config import settings
 from app.tools import mocks
 
 log = logging.getLogger("tool_gateway")

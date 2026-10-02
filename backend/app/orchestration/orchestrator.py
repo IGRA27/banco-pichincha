@@ -14,15 +14,15 @@ from __future__ import annotations
 
 import logging
 
-from app import policies
+from app.domain import policies
 from app.agents.base import AgentResult, SubAgent
 from app.agents.documentation import DocumentationAgent
 from app.agents.identity import IdentityAgent
 from app.agents.response import ResponseAgent
 from app.agents.risk import RiskAgent
-from app.models import (Decision, OnboardingRequest, OnboardingSession, RequiredDocument,
+from app.domain.models import (Decision, OnboardingRequest, OnboardingSession, RequiredDocument,
                         ResolveRequest, SessionStatus, StepResult, StepStatus)
-from app.state import SessionRepository
+from app.infrastructure.repository import SessionRepository
 from app.tools.gateway import ToolGateway
 
 log = logging.getLogger("orchestrator")

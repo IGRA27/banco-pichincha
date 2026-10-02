@@ -21,12 +21,42 @@ flowchart LR
     O <--> DB[(SQLite · sesiones)]
 ```
 
+## Estructura
+
+```
+backend/app/
+├── main.py                  # app factory FastAPI
+├── api/                     # capa HTTP
+│   ├── deps.py              #   composition root (inyección de dependencias)
+│   └── v1/routes.py         #   endpoints versionados
+├── orchestration/
+│   └── orchestrator.py      # supervisor + máquina de estados
+├── agents/                  # sub-agentes especializados
+│   ├── base.py              #   contrato SubAgent / AgentResult
+│   ├── identity.py · risk.py · documentation.py · response.py
+├── tools/
+│   ├── gateway.py           # allowlist por agente, reintentos, auditoría
+│   └── mocks.py             # Tool 1, 2, 3 (mock deterministas)
+├── domain/
+│   ├── models.py            # contratos Pydantic y estado de sesión
+│   └── policies.py          # motor de reglas por producto
+├── infrastructure/
+│   └── repository.py        # SessionRepository (SQLite)
+└── core/config.py           # settings por variables de entorno
+
+frontend/src/
+├── app/                     # shell y providers
+├── components/ui/           # shadcn/ui
+├── components/layout/
+└── features/onboarding/     # api, hooks, componentes del caso
+```
+
 ## Cumplimiento del caso
 
 | Requisito | Implementación |
 |---|---|
 | Recibir solicitud | `POST /api/v1/onboarding/start` con validación Pydantic |
-| Determinar si es apto bajo políticas | `app/policies.py`: motor de reglas por producto (APTO / NO_APTO / REVISION_MANUAL) |
+| Determinar si es apto bajo políticas | `app/domain/policies.py`: motor de reglas por producto (APTO / NO_APTO / REVISION_MANUAL) |
 | Falla o ambigüedad, proponer solución | `Escalation.proposed_solution` en cada agente + `POST /resolve` (human-in-the-loop) |
 | Tool 1 `verify_identity` (confianza < 0.8 escala) | `app/tools/mocks.py` + `app/agents/identity.py` |
 | Tool 2 `check_risk_lists` (high escala) | `app/tools/mocks.py` + `app/agents/risk.py` |

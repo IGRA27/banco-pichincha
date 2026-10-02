@@ -1,5 +1,5 @@
 from app.agents.base import AgentResult, SubAgent
-from app.models import OnboardingSession, StepStatus
+from app.domain.models import OnboardingSession, StepStatus
 
 
 class DocumentationAgent(SubAgent):

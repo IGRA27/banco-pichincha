@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from app.config import settings
-from app.models import Decision
+from app.core.config import settings
+from app.domain.models import Decision
 
 
 @dataclass(frozen=True)

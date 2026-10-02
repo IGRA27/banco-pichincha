@@ -1,6 +1,6 @@
 from app.agents.base import AgentResult, SubAgent
-from app.config import settings
-from app.models import Escalation, OnboardingSession, StepStatus
+from app.core.config import settings
+from app.domain.models import Escalation, OnboardingSession, StepStatus
 from app.tools.gateway import ToolUnavailableError
 
 
