@@ -8,7 +8,8 @@ services:
     ports:
       - "127.0.0.1:8080:8080"          # solo accesible desde esta máquina
     env_file:
-      - backend/.env                    # secretos inyectados en runtime, nunca en la imagen
+      - path: backend/.env              # secretos inyectados en runtime, nunca en la imagen
+        required: false                 # se crea con: docker compose run --rm init
     environment:
       DATABASE_PATH: /tmp/onboarding.db
       CORS_ORIGINS: http://localhost:8080
